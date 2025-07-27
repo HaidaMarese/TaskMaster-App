@@ -4,8 +4,6 @@ import Project from "../models/Project.js";
 import { authMiddleware } from "../utils/auth.js";
 
 const router = express.Router();
-
-
 router.use(authMiddleware);
 
 
@@ -14,39 +12,10 @@ const verifyOwnership = async (projectId, userId) => {
   return project && project.user.toString() === userId.toString();
 };
 
-// GET /api/tasks
-router.get("/", async (req, res) => {
-  try {
-    const tasks = await Task.find({ user: req.user._id });
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch tasks" });
-  }
-});
-
-//  POST /api/tasks - Create task 
-router.post("/", async (req, res) => {
-  try {
-    const { project } = req.body;
-    const isOwner = await verifyOwnership(project, req.user._id);
-    if (!isOwner) return res.status(403).json({ message: "Unauthorized" });
-
-    const task = await Task.create({
-      ...req.body,
-      user: req.user._id,
-    });
-
-    res.status(201).json(task);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// POST /api/tasks/projects/:projectId/tasks 
+//  Create task 
 router.post("/projects/:projectId/tasks", async (req, res) => {
   try {
     const { projectId } = req.params;
-
     const isOwner = await verifyOwnership(projectId, req.user._id);
     if (!isOwner) return res.status(403).json({ message: "Unauthorized" });
 
@@ -62,11 +31,10 @@ router.post("/projects/:projectId/tasks", async (req, res) => {
   }
 });
 
-// GET /api/tasks/projects/:projectId/tasks 
+// Get all tasks 
 router.get("/projects/:projectId/tasks", async (req, res) => {
   try {
     const { projectId } = req.params;
-
     const isOwner = await verifyOwnership(projectId, req.user._id);
     if (!isOwner) return res.status(403).json({ message: "Unauthorized" });
 
@@ -77,7 +45,7 @@ router.get("/projects/:projectId/tasks", async (req, res) => {
   }
 });
 
-// PUT /api/tasks/tasks/:taskId
+//  Update a task 
 router.put("/tasks/:taskId", async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId);
@@ -93,6 +61,22 @@ router.put("/tasks/:taskId", async (req, res) => {
     );
 
     res.json(updatedTask);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Delete a task 
+router.delete("/tasks/:taskId", async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    const isOwner = await verifyOwnership(task.project, req.user._id);
+    if (!isOwner) return res.status(403).json({ message: "Unauthorized" });
+
+    await task.deleteOne();
+    res.json({ message: "Task deleted" });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
