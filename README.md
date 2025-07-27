@@ -65,6 +65,7 @@ Built using **Node.js**, **Express**, **MongoDB**, **Mongoose**, **JWT**, and **
 
    ```bash
    git clone https://github.com/HaidaMarese/TaskMaster-App.git
+   cd..
  ```
 
 ##  Install Dependencies
