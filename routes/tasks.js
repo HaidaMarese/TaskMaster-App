@@ -6,13 +6,22 @@ import { authMiddleware } from "../utils/auth.js";
 const router = express.Router();
 router.use(authMiddleware);
 
-
 const verifyOwnership = async (projectId, userId) => {
   const project = await Project.findById(projectId);
   return project && project.user.toString() === userId.toString();
 };
 
-//  Create task 
+// Get all tasks for user
+router.get("/tasks", async (req, res) => {
+  try {
+    const tasks = await Task.find({ user: req.user._id });
+    res.json(tasks);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Create task
 router.post("/projects/:projectId/tasks", async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -31,7 +40,7 @@ router.post("/projects/:projectId/tasks", async (req, res) => {
   }
 });
 
-// Get all tasks 
+// Get tasks by project
 router.get("/projects/:projectId/tasks", async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -45,7 +54,7 @@ router.get("/projects/:projectId/tasks", async (req, res) => {
   }
 });
 
-//  Update a task 
+// Update task
 router.put("/tasks/:taskId", async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId);
@@ -66,7 +75,7 @@ router.put("/tasks/:taskId", async (req, res) => {
   }
 });
 
-// Delete a task 
+// Delete task
 router.delete("/tasks/:taskId", async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId);
