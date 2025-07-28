@@ -1,11 +1,10 @@
 import express from "express";
 import Project from "../models/Project.js";
 import User from "../models/User.js";
-import Task from "../models/Task.js"; 
+import Task from "../models/Task.js";
 import { authMiddleware } from "../utils/auth.js";
 
 const router = express.Router();
-
 
 router.use(authMiddleware);
 
@@ -19,14 +18,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET ALL
+
 router.get("/", async (req, res) => {
   const owned = await Project.find({ user: req.user._id });
   const shared = await Project.find({ "members.user": req.user._id });
   res.json([...owned, ...shared]);
 });
 
-// GET
+
 router.get("/:id", async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (
@@ -39,7 +38,7 @@ router.get("/:id", async (req, res) => {
   res.json(project);
 });
 
-// PUT
+
 router.put("/:id", async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (!project || !project.user.equals(req.user._id)) {
@@ -50,7 +49,7 @@ router.put("/:id", async (req, res) => {
   res.json(project);
 });
 
-// DELETE
+
 router.delete("/:id", async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (!project || !project.user.equals(req.user._id)) {
@@ -60,7 +59,7 @@ router.delete("/:id", async (req, res) => {
   res.json({ message: "Project deleted" });
 });
 
-// POST
+
 router.post("/:id/invite", async (req, res) => {
   const project = await Project.findById(req.params.id);
   if (!project || !project.user.equals(req.user._id)) {
@@ -76,6 +75,26 @@ router.post("/:id/invite", async (req, res) => {
   res.json({ message: "User invited", project });
 });
 
+
+router.get("/:projectId/tasks", async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const project = await Project.findById(projectId);
+    if (
+      !project ||
+      (!project.user.equals(req.user._id) &&
+        !project.members.some((m) => m.user.equals(req.user._id)))
+    ) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const tasks = await Task.find({ project: projectId });
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 router.post("/:projectId/tasks", async (req, res) => {
